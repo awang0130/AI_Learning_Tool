@@ -5,8 +5,24 @@ from app_backend.cache import cache_get, cache_set
 from app_backend.search import search_resources
 from app_backend.openai_client import client, MODEL
 from app_backend.prompts import OUTLINE_SYSTEM_PROMPT, PLAN_SYSTEM_PROMPT
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+
 
 app = FastAPI(title="30-Day Training Planner")
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173/"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 
 def parse_json_or_repair(text: str) -> dict:
     """
@@ -90,11 +106,10 @@ Requirements:
             model=MODEL,
             response_format={"type": "json_object"},
             messages=[
-            {"role": "system", "content": PLAN_SYSTEM_PROMPT},
-            {"role": "user", "content": user_msg},
-        ],
-    )
-
+                {"role": "system", "content": PLAN_SYSTEM_PROMPT},
+                {"role": "user", "content": user_msg},
+            ],
+        )
         data = parse_json_or_repair(resp.choices[0].message.content)
         cache_set("outline", cache_payload, data)
         return data
